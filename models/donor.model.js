@@ -2,6 +2,11 @@
 import mongoose from "mongoose";
 
 const donorSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   name: { type: String, required: true },
   dob: { type: Date, required: true },
   gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
@@ -13,7 +18,7 @@ const donorSchema = new mongoose.Schema({
     enum: ["PAN", "Aadhaar", "Vote ID"],
     required: true,
   },
-  idProofImage: { type: String }, // Cloudinary URL
+  idProofImage: { type: String },
   disability: { type: Boolean, required: true },
   weight: { type: Number, required: true },
   hemoglobinCount: { type: Number, required: true },

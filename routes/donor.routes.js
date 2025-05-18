@@ -1,10 +1,19 @@
-// routes/donor.routes.js
 import express from "express";
-import { registerDonor } from "../controllers/donor.controller.js";
+import {
+  registerDonor,
+  getAllDonors,
+  getDonorById,
+  getMyDonorForm,
+} from "../controllers/donor.controller.js";
 import { singleUpload } from "../middlewares/multer.js";
+import { isAuthenticated } from "../middlewares/auth.js"; // assuming JWT auth
 
 const router = express.Router();
 
-router.post("/register", singleUpload, registerDonor);
+// All routes require authentication
+router.post("/register", isAuthenticated, singleUpload, registerDonor);
+router.get("/all", isAuthenticated, getAllDonors); // admin
+router.get("/me", isAuthenticated, getMyDonorForm);
+router.get("/:id", isAuthenticated, getDonorById);
 
 export default router;
