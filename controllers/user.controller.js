@@ -10,9 +10,6 @@ import cloudinary from "../utils/Cloudinary.js";
 // Register User
 export const register = async (req, res) => {
   try {
-    console.log("Received Request Body:", req.body);
-    console.log("Received Files:", req.files);
-
     const {
       role,
       name,
@@ -25,23 +22,23 @@ export const register = async (req, res) => {
       phone,
     } = req.body;
 
-    // Validate required fields
-    if (!role || !email || !password || !confirmPassword || !phone ) {
+    // Basic field validation
+    if (!role || !email || !password || !confirmPassword || !phone) {
       return res.status(400).json({ message: "Please provide all required fields.", success: false });
     }
 
     // Role-based validation
     if (role === "admin" && !name) {
-      return res.status(400).json({ message: "Admin name is required." });
+      return res.status(400).json({ message: "Admin name is required.", success: false });
     }
     if (role === "organisation" && (!organisationName || !req.files?.organisationIdImage)) {
-      return res.status(400).json({ message: "Organisation name and ID image are required." });
+      return res.status(400).json({ message: "Organisation name and ID image are required.", success: false });
     }
     if (role === "hospital" && (!hospitalName || !req.files?.hospitalIdImage)) {
-      return res.status(400).json({ message: "Hospital name and ID image are required." });
+      return res.status(400).json({ message: "Hospital name and ID image are required.", success: false });
     }
     if (role === "user" && (!name || !addhar || !req.files?.addharImage)) {
-      return res.status(400).json({ message: "User name, Aadhaar, and Aadhaar image are required." });
+      return res.status(400).json({ message: "User name, Aadhaar, and Aadhaar image are required.", success: false });
     }
 
     // Check if user already exists
@@ -50,31 +47,29 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "User already exists with this email.", success: false });
     }
 
-    // Password match check
+    // Check password match
     if (password !== confirmPassword) {
-      return res.status(400).json({ message: "Passwords do not match." });
+      return res.status(400).json({ message: "Passwords do not match.", success: false });
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Upload documents to Cloudinary
+    // File upload helper
     const uploadFile = async (file) => {
       if (!file) return "";
       const fileUri = getDataUri(file);
-      const uploadResult = await cloudinary.uploader.upload(fileUri.content);
-      return uploadResult.secure_url;
+      const result = await cloudinary.uploader.upload(fileUri.content);
+      return result.secure_url;
     };
 
-    // Handle file uploads if they exist
-    const fileUploads = {
-      addharImage: req.files?.addharImage ? await uploadFile(req.files.addharImage[0]) : "",
-      organisationIdImage: req.files?.organisationIdImage ? await uploadFile(req.files.organisationIdImage[0]) : "",
-      hospitalIdImage: req.files?.hospitalIdImage ? await uploadFile(req.files.hospitalIdImage[0]) : "",
-      profilePhoto: req.files?.profilePhoto ? await uploadFile(req.files.profilePhoto[0]) : "", // Optional
-    };
+    // Upload files if present
+    const addharImage = req.files?.addharImage ? await uploadFile(req.files.addharImage[0]) : "";
+    const organisationIdImage = req.files?.organisationIdImage ? await uploadFile(req.files.organisationIdImage[0]) : "";
+    const hospitalIdImage = req.files?.hospitalIdImage ? await uploadFile(req.files.hospitalIdImage[0]) : "";
+    const profilePhoto = req.files?.profilePhoto ? await uploadFile(req.files.profilePhoto[0]) : "";
 
-    // Create new user
+    // Create new user document
     const newUser = new User({
       role,
       name,
@@ -83,24 +78,24 @@ export const register = async (req, res) => {
       email,
       password: hashedPassword,
       addhar,
-      addharImage: fileUploads.addharImage,
-      organisationId: fileUploads.organisationIdImage ? "Org123" : "",
-      organisationIdImage: fileUploads.organisationIdImage,
-      hospitalId: fileUploads.hospitalIdImage ? "Hosp123" : "",
-      hospitalIdImage: fileUploads.hospitalIdImage,
       phone,
+      addharImage,
+      organisationId: organisationIdImage ? "ORG123" : "",
+      organisationIdImage,
+      hospitalId: hospitalIdImage ? "HOSP123" : "",
+      hospitalIdImage,
       profile: {
         bio: "",
         skills: [],
-        profilePhoto: fileUploads.profilePhoto || "",
+        profilePhoto,
       },
     });
 
     await newUser.save();
 
-    return res.status(201).json({ message: "Account created successfully.", success: true });
+    res.status(201).json({ message: "Account created successfully.", success: true });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error in register:", error);
     res.status(500).json({ message: "Server error", success: false });
   }
 };
