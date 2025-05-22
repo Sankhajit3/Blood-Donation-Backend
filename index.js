@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import connectDB from "./utils/db.js";
 import userRoute from "./routes/user.routes.js";
 import testimonialRoutes from "./routes/testimonials.route.js";
+import bloodRequestRouter from "./routes/bloodRequest.routes.js";
 import eventRoutes from "./routes/event.routes.js";
 
 
@@ -30,6 +31,7 @@ const PORT = process.env.PORT || 8000;
 app.use("/api/v1/user",userRoute);
 app.use("/api/v1/testimonials", testimonialRoutes);
 app.use("/api/v1/events", eventRoutes);
+router.use("/blood-requests", bloodRequestRouter);
 
 app.listen(PORT,()=>{
     connectDB();

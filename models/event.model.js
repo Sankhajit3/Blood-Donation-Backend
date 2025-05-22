@@ -3,25 +3,32 @@ import mongoose from "mongoose";
 const eventSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
+    required: [true, "Title is required"],
   },
-  description: String,
+  description: {
+    type: String,
+  },
   date: {
     type: Date,
-    required: true,
+    required: [true, "Date is required"],
   },
   time: {
     type: String,
-    required: true,
+    required: [true, "Time is required"],
   },
   venue: {
     type: String,
-    required: true,
+    required: [true, "Venue is required"],
   },
   image: {
     type: String,
-    default: "", // optional image URL
-  }
+    default: "",
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
 }, { timestamps: true });
 
 const Event = mongoose.model("Event", eventSchema);

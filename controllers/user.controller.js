@@ -20,6 +20,19 @@ export const register = async (req, res) => {
       confirmPassword,
       addhar,
       phone,
+      // Personal Information
+      dateOfBirth,
+      address,
+      emergencyContact,
+      bloodType,
+      gender,
+      // Medical Details
+      weight,
+      height,
+      bloodPressure,
+      chronicConditions,
+      allergies,
+      medications
     } = req.body;
 
     // Basic field validation
@@ -84,6 +97,19 @@ export const register = async (req, res) => {
       organisationIdImage,
       hospitalId: hospitalIdImage ? "HOSP123" : "",
       hospitalIdImage,
+      // Personal Information
+      dateOfBirth,
+      address,
+      emergencyContact,
+      bloodType,
+      gender,
+      // Medical Details
+      weight,
+      height,
+      bloodPressure,
+      chronicConditions: Array.isArray(chronicConditions) ? chronicConditions : (chronicConditions ? [chronicConditions] : []),
+      allergies: Array.isArray(allergies) ? allergies : (allergies ? [allergies] : []),
+      medications: Array.isArray(medications) ? medications : (medications ? [medications] : []),
       profile: {
         bio: "",
         skills: [],
@@ -99,7 +125,6 @@ export const register = async (req, res) => {
     res.status(500).json({ message: "Server error", success: false });
   }
 };
-
 
 
 // Login User
@@ -224,8 +249,30 @@ export const generateCaptcha = async (req, res) => {
 
 export const updateUser = async (req, res) => {
     try {
-        const userId = req.user.id; // This should be extracted from JWT middleware
-        const { name, email, phone, addhar,organisationId, organisationName,hospitalId, hospitalName } = req.body;
+        const userId = req.user.id;
+        const { 
+            name, 
+            email, 
+            phone, 
+            addhar,
+            organisationId, 
+            organisationName,
+            hospitalId, 
+            hospitalName,
+            // Personal Information
+            dateOfBirth,
+            address,
+            emergencyContact,
+            bloodType,
+            gender,
+            // Medical Details
+            weight,
+            height,
+            bloodPressure,
+            chronicConditions,
+            allergies,
+            medications
+        } = req.body;
 
         let user = await User.findById(userId);
         if (!user) {
@@ -250,7 +297,28 @@ export const updateUser = async (req, res) => {
         if (organisationId) user.organisationId = organisationId;
         if (organisationName) user.organisationName = organisationName;
         if (hospitalId) user.hospitalId = hospitalId;
-        if (hospitalName) user.hospitalName = hospitalId;
+        if (hospitalName) user.hospitalName = hospitalName;
+
+        // Update personal information
+        if (dateOfBirth) user.dateOfBirth = dateOfBirth;
+        if (address) user.address = address;
+        if (emergencyContact) user.emergencyContact = emergencyContact;
+        if (bloodType) user.bloodType = bloodType;
+        if (gender) user.gender = gender;
+
+        // Update medical details
+        if (weight) user.weight = weight;
+        if (height) user.height = height;
+        if (bloodPressure) user.bloodPressure = bloodPressure;
+        if (chronicConditions) user.chronicConditions = Array.isArray(chronicConditions) 
+            ? chronicConditions 
+            : [chronicConditions];
+        if (allergies) user.allergies = Array.isArray(allergies) 
+            ? allergies 
+            : [allergies];
+        if (medications) user.medications = Array.isArray(medications) 
+            ? medications 
+            : [medications];
 
         // Update uploaded images
         if (fileUploads.addharImage) user.addharImage = fileUploads.addharImage;
@@ -259,7 +327,11 @@ export const updateUser = async (req, res) => {
 
         await user.save();
 
-        return res.status(200).json({ message: "Profile updated successfully.", user, success: true });
+        return res.status(200).json({ 
+            message: "Profile updated successfully.", 
+            user, 
+            success: true 
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server error", success: false });
