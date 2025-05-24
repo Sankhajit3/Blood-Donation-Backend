@@ -96,7 +96,7 @@ export const register = async (req, res) => {
       password: hashedPassword,
       aadhaar,
       phone,
-      aadhaarImage,
+      addharImage,
       organisationIdImage,
       hospitalIdImage,
       // Personal Information
