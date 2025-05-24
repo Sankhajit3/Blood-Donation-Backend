@@ -93,9 +93,9 @@ export const register = async (req, res) => {
       addhar,
       phone,
       addharImage,
-      organisationId: organisationIdImage ? "ORG123" : "",
+      organisationId:  "",
       organisationIdImage,
-      hospitalId: hospitalIdImage ? "HOSP123" : "",
+      hospitalId: "",
       hospitalIdImage,
       // Personal Information
       dateOfBirth,
