@@ -5,7 +5,7 @@ import cloudinary from "../utils/Cloudinary.js";
 // Create a new event with image upload
 export const createEvent = async (req, res) => {
   try {
-    const { title, description, date, time, venue } = req.body;
+    const { title, description, date, time, venue, userId } = req.body;
     
     // Validate required fields
     if (!title || !date || !time || !venue) {
@@ -31,7 +31,7 @@ export const createEvent = async (req, res) => {
       time, 
       venue, 
       image: imageUrl,
-      createdBy: req.user._id // From authenticated user
+      createdBy: userId // From authenticated user
     });
 
     await event.save();

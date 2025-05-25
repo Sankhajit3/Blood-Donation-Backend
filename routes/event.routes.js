@@ -12,7 +12,7 @@ import { singleUpload } from "../middlewares/multer.js";
 const router = express.Router();
 
 // Create event (with image upload)
-router.post("/craete", isAuthenticated, singleUpload, createEvent);
+router.post("/create", isAuthenticated, singleUpload, createEvent);
 
 // Get all events (public)
 router.get("/", getAllEvents);
