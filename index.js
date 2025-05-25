@@ -31,7 +31,7 @@ const PORT = process.env.PORT || 8000;
 app.use("/api/v1/user",userRoute);
 app.use("/api/v1/testimonials", testimonialRoutes);
 app.use("/api/v1/events", eventRoutes);
-router.use("/blood-requests", bloodRequestRouter);
+app.use("/blood-requests", bloodRequestRouter);
 
 app.listen(PORT,()=>{
     connectDB();
