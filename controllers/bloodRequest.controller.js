@@ -30,6 +30,14 @@ export const createBloodRequest = async (req, res) => {
         message: "All fields are required",
         success: false,
       });
+    }    // Get user ID from either req.user._id or req.userId
+    const userId = req.user?._id || req.userId;
+    
+    if (!userId) {
+      return res.status(401).json({
+        message: "User not authenticated",
+        success: false
+      });
     }
 
     // Create new blood request
@@ -42,7 +50,7 @@ export const createBloodRequest = async (req, res) => {
       unitsRequired,
       contactNumber,
       reason,
-      createdBy: req.user._id, // From authenticated user
+      createdBy: userId
     });
 
     await newBloodRequest.save();

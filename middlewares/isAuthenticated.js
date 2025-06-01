@@ -20,10 +20,8 @@ const isAuthenticated = (req, res, next) => {
                 message:"Invalid token",
                 success:false
             })
-        };
-
-        // Attach only user ID to request
-        req.userId = decoded.userId;
+        };        // Attach user to request
+        req.user = { _id: decoded.userId };
 
         next();
     } catch (error) {

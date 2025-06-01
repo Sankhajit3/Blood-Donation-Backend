@@ -10,7 +10,7 @@ router.post("/login", login);
 router.post("/logout", logout);
 router.get("/users", isAuthenticated, getAllUsers);
 router.get("/users/:id", isAuthenticated, getUserById);
-router.put("/profile/update", isAuthenticated,singleUpload, updateUser);
+router.put("/users/:id", isAuthenticated, singleUpload, updateUser);
 router.delete("/delete/:id", isAuthenticated, deleteUser);
 
 export default router;

@@ -7,6 +7,27 @@ import cloudinary from "../utils/Cloudinary.js";
 // // Secret Key for JWT (store it in .env file in production)
 // const JWT_SECRET = process.env.SECRET_KEY ;
 
+// Helper functions to parse measurements
+const parseWeight = (weight) => {
+  if (typeof weight === 'number') return weight;
+  if (typeof weight === 'string') {
+    // Extract numeric value, assuming it's in kg
+    const numericValue = parseFloat(weight.replace(/[^\d.-]/g, ''));
+    return !isNaN(numericValue) ? numericValue : null;
+  }
+  return null;
+};
+
+const parseHeight = (height) => {
+  if (typeof height === 'number') return height;
+  if (typeof height === 'string') {
+    // Extract numeric value, assuming it's in cm
+    const numericValue = parseFloat(height.replace(/[^\d.-]/g, ''));
+    return !isNaN(numericValue) ? numericValue : null;
+  }
+  return null;
+};
+
 // Register User
 export const register = async (req, res) => {
   try {
@@ -145,8 +166,8 @@ export const register = async (req, res) => {
       bloodType: bloodType || null,
       gender: gender || null,
       // Medical Details
-      weight: weight || null,
-      height: height || null,
+      weight: parseWeight(weight) || null,
+      height: parseHeight(height) || null,
       bloodPressure: bloodPressure || null,
       chronicConditions: Array.isArray(chronicConditions)
         ? chronicConditions
@@ -319,7 +340,17 @@ export const generateCaptcha = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.params.id;
+    const authUser = req.user;
+
+    // Check if user has permission to update (must be admin or the user themselves)
+    if (authUser.role !== 'admin' && authUser._id.toString() !== userId) {
+      return res.status(403).json({
+        message: "You don't have permission to update this user",
+        success: false
+      });
+    }
+
     const {
       name,
       email,
@@ -379,8 +410,8 @@ export const updateUser = async (req, res) => {
     if (gender) user.gender = gender;
 
     // Update medical details
-    if (weight) user.weight = weight;
-    if (height) user.height = height;
+    if (weight) user.weight = parseWeight(weight);
+    if (height) user.height = parseHeight(height);
     if (bloodPressure) user.bloodPressure = bloodPressure;
     if (chronicConditions)
       user.chronicConditions = Array.isArray(chronicConditions)
