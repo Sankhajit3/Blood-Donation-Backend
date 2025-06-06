@@ -294,7 +294,7 @@ export const updateResponseStatus = async (req, res) => {
   try {
     const { responseId } = req.params;
     const { status } = req.body;
-    
+
     // Validate status
     if (!["Pending", "Accepted", "Declined", "Completed"].includes(status)) {
       return res.status(400).json({
@@ -315,7 +315,7 @@ export const updateResponseStatus = async (req, res) => {
 
     // Find the response
     const response = await BloodRequestResponse.findById(responseId);
-    
+
     if (!response) {
       return res.status(404).json({
         message: "Response not found",
@@ -325,7 +325,7 @@ export const updateResponseStatus = async (req, res) => {
 
     // Get the blood request to check if current user is the creator
     const bloodRequest = await BloodRequest.findById(response.bloodRequest);
-    
+
     if (!bloodRequest) {
       return res.status(404).json({
         message: "Blood request not found",

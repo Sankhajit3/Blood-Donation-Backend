@@ -35,6 +35,10 @@ router.post("/:requestId/respond", isAuthenticated, respondToBloodRequest);
 router.get("/:requestId/responses", isAuthenticated, getBloodRequestResponses);
 
 // Update response status (for request creators - hospital, organization, admin)
-router.put("/responses/:responseId/status", isAuthenticated, updateResponseStatus);
+router.put(
+  "/responses/:responseId/status",
+  isAuthenticated,
+  updateResponseStatus
+);
 
 export default router;
