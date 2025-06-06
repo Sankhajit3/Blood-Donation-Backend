@@ -255,3 +255,36 @@ export const getBloodRequestResponses = async (req, res) => {
     });
   }
 };
+
+// Get all responses made by current donor user
+export const getUserResponses = async (req, res) => {
+  try {
+    const userId = req.user?._id || req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "User not authenticated",
+        success: false,
+      });
+    }
+
+    const responses = await BloodRequestResponse.find({ donor: userId })
+      .populate(
+        "bloodRequest",
+        "patientName bloodType hospital location urgency unitsRequired status"
+      )
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      message: "User responses retrieved successfully",
+      responses,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error fetching user responses:", error);
+    res.status(500).json({
+      message: "Server error while fetching user responses",
+      success: false,
+    });
+  }
+};

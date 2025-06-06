@@ -6,6 +6,7 @@ import {
   updateBloodRequestStatus,
   respondToBloodRequest,
   getBloodRequestResponses,
+  getUserResponses,
 } from "../controllers/bloodRequest.controller.js";
 import isAuthenticated from "../middlewares/isAuthenticated.js";
 
@@ -19,6 +20,9 @@ router.get("/", getAllBloodRequests);
 
 // Get blood requests by user (Authenticated users)
 router.get("/my-requests", isAuthenticated, getUserBloodRequests);
+
+// Get responses made by the current user (Authenticated users)
+router.get("/my-responses", isAuthenticated, getUserResponses);
 
 // Update blood request status (Admin/Hospital)
 router.put("/:requestId/status", isAuthenticated, updateBloodRequestStatus);
