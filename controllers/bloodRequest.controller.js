@@ -288,3 +288,77 @@ export const getUserResponses = async (req, res) => {
     });
   }
 };
+
+// Update response status (for request creators - hospital, organization, admin)
+export const updateResponseStatus = async (req, res) => {
+  try {
+    const { responseId } = req.params;
+    const { status } = req.body;
+    
+    // Validate status
+    if (!["Pending", "Accepted", "Declined", "Completed"].includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status value",
+        success: false,
+      });
+    }
+
+    // Get user ID from authenticated user
+    const userId = req.user?._id || req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "User not authenticated",
+        success: false,
+      });
+    }
+
+    // Find the response
+    const response = await BloodRequestResponse.findById(responseId);
+    
+    if (!response) {
+      return res.status(404).json({
+        message: "Response not found",
+        success: false,
+      });
+    }
+
+    // Get the blood request to check if current user is the creator
+    const bloodRequest = await BloodRequest.findById(response.bloodRequest);
+    
+    if (!bloodRequest) {
+      return res.status(404).json({
+        message: "Blood request not found",
+        success: false,
+      });
+    }
+
+    // Check if the current user is the creator of the blood request
+    if (bloodRequest.createdBy.toString() !== userId.toString()) {
+      return res.status(403).json({
+        message: "You are not authorized to update this response status",
+        success: false,
+      });
+    }
+
+    // Update the response status
+    response.status = status;
+    await response.save();
+
+    // Return the updated response
+    await response.populate("donor", "name email phone");
+    await response.populate("bloodRequest", "patientName bloodType hospital");
+
+    res.status(200).json({
+      message: "Response status updated successfully",
+      response,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error updating response status:", error);
+    res.status(500).json({
+      message: "Server error while updating response status",
+      success: false,
+    });
+  }
+};
