@@ -34,8 +34,8 @@ export const register = async (req, res) => {
     const {
       role,
       name,
-      organisationName,
-      organisationId,
+      organizationName,
+      organizationId,
       hospitalName,
       hospitalId,
       email,
@@ -73,11 +73,11 @@ export const register = async (req, res) => {
         .json({ message: "Admin name is required.", success: false });
     }
     if (
-      role === "organisation" &&
-      (!organisationName || (!req.files?.organisationIdImage && !req.body.organisationIdImage))
+      role === "organization" &&
+      (!organizationName || (!req.files?.organizationIdImage && !req.body.organizationIdImage))
     ) {
       return res.status(400).json({
-        message: "Organisation name and ID image (file or URL) are required.",
+        message: "organization name and ID image (file or URL) are required.",
         success: false,
       });
     }
@@ -132,9 +132,9 @@ export const register = async (req, res) => {
       ? await uploadFile(req.files.addharImage[0])
       : req.body.addharImage || "";
 
-    const organisationIdImage = req.files?.organisationIdImage
-      ? await uploadFile(req.files.organisationIdImage[0])
-      : req.body.organisationIdImage || "";
+    const organizationIdImage = req.files?.organizationIdImage
+      ? await uploadFile(req.files.organizationIdImage[0])
+      : req.body.organizationIdImage || "";
 
     const hospitalIdImage = req.files?.hospitalIdImage
       ? await uploadFile(req.files.hospitalIdImage[0])
@@ -148,8 +148,8 @@ export const register = async (req, res) => {
     const newUser = new User({
       role,
       name,
-      organisationName,
-      organisationId: role === "organisation" ? organisationId : null,
+      organizationName,
+      organizationId: role === "organization" ? organizationId : null,
       hospitalName,
       hospitalId: role === "hospital" ? hospitalId : null,
       email,
@@ -157,7 +157,7 @@ export const register = async (req, res) => {
       addhar,
       phone,
       addharImage,
-      organisationIdImage,
+      organizationIdImage,
       hospitalIdImage,
       // Personal Information
       dateOfBirth: dateOfBirth || null,
@@ -356,8 +356,8 @@ export const updateUser = async (req, res) => {
       email,
       phone,
       addhar,
-      organisationId,
-      organisationName,
+      organizationId,
+      organizationName,
       hospitalId,
       hospitalName,
       // Personal Information
@@ -397,8 +397,8 @@ export const updateUser = async (req, res) => {
     if (email) user.email = email;
     if (phone) user.phone = phone;
     if (addhar) user.addhar = addhar;
-    if (organisationId) user.organisationId = organisationId;
-    if (organisationName) user.organisationName = organisationName;
+    if (organizationId) user.organizationId = organizationId;
+    if (organizationName) user.organizationName = organizationName;
     if (hospitalId) user.hospitalId = hospitalId;
     if (hospitalName) user.hospitalName = hospitalName;
 
@@ -426,8 +426,8 @@ export const updateUser = async (req, res) => {
 
     // Update uploaded images
     if (fileUploads.addharImage) user.addharImage = fileUploads.addharImage;
-    if (fileUploads.organisationIdImage)
-      user.organisationIdImage = fileUploads.organisationIdImage;
+    if (fileUploads.organizationIdImage)
+      user.organizationIdImage = fileUploads.organizationIdImage;
     if (fileUploads.hospitalIdImage)
       user.hospitalIdImage = fileUploads.hospitalIdImage;
 
