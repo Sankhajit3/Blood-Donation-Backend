@@ -42,6 +42,10 @@ const bloodRequestSchema = new mongoose.Schema({
     enum: ["Pending", "Approved", "Rejected", "Fulfilled"],
     default: "Pending",
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

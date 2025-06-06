@@ -8,6 +8,7 @@ import {
   getBloodRequestResponses,
   getUserResponses,
   updateResponseStatus,
+  deleteBloodRequest,
 } from "../controllers/bloodRequest.controller.js";
 import isAuthenticated from "../middlewares/isAuthenticated.js";
 
@@ -40,5 +41,8 @@ router.put(
   isAuthenticated,
   updateResponseStatus
 );
+
+// Delete blood request (for request creators only)
+router.delete("/:requestId", isAuthenticated, deleteBloodRequest);
 
 export default router;

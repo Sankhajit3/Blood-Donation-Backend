@@ -73,7 +73,7 @@ export const createBloodRequest = async (req, res) => {
 // Get All Blood Requests
 export const getAllBloodRequests = async (req, res) => {
   try {
-    const bloodRequests = await BloodRequest.find()
+    const bloodRequests = await BloodRequest.find({ isDeleted: { $ne: true } })
       .sort({ createdAt: -1 })
       .populate("createdBy", "name email phone");
 
@@ -94,7 +94,10 @@ export const getAllBloodRequests = async (req, res) => {
 // Get Blood Requests by User
 export const getUserBloodRequests = async (req, res) => {
   try {
-    const bloodRequests = await BloodRequest.find({ createdBy: req.user._id })
+    const bloodRequests = await BloodRequest.find({
+      createdBy: req.user._id,
+      isDeleted: { $ne: true },
+    })
       .sort({ createdAt: -1 })
       .populate("createdBy", "name email phone");
 
@@ -174,13 +177,11 @@ export const respondToBloodRequest = async (req, res) => {
         message: "Contact number is required",
         success: false,
       });
-    }
-
-    // Check if blood request exists
+    } // Check if blood request exists and is not deleted
     const bloodRequest = await BloodRequest.findById(requestId);
-    if (!bloodRequest) {
+    if (!bloodRequest || bloodRequest.isDeleted) {
       return res.status(404).json({
-        message: "Blood request not found",
+        message: "Blood request not found or has been deleted",
         success: false,
       });
     }
@@ -236,6 +237,15 @@ export const getBloodRequestResponses = async (req, res) => {
   try {
     const { requestId } = req.params;
 
+    // Check if the blood request exists and is not deleted
+    const bloodRequest = await BloodRequest.findById(requestId);
+    if (!bloodRequest || bloodRequest.isDeleted) {
+      return res.status(404).json({
+        message: "Blood request not found or has been deleted",
+        success: false,
+      });
+    }
+
     const responses = await BloodRequestResponse.find({
       bloodRequest: requestId,
     })
@@ -269,10 +279,11 @@ export const getUserResponses = async (req, res) => {
     }
 
     const responses = await BloodRequestResponse.find({ donor: userId })
-      .populate(
-        "bloodRequest",
-        "patientName bloodType hospital location urgency unitsRequired status"
-      )
+      .populate({
+        path: "bloodRequest",
+        select:
+          "patientName bloodType hospital location urgency unitsRequired status isDeleted",
+      })
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -321,14 +332,12 @@ export const updateResponseStatus = async (req, res) => {
         message: "Response not found",
         success: false,
       });
-    }
-
-    // Get the blood request to check if current user is the creator
+    } // Get the blood request to check if current user is the creator
     const bloodRequest = await BloodRequest.findById(response.bloodRequest);
 
-    if (!bloodRequest) {
+    if (!bloodRequest || bloodRequest.isDeleted) {
       return res.status(404).json({
-        message: "Blood request not found",
+        message: "Blood request not found or has been deleted",
         success: false,
       });
     }
@@ -348,7 +357,6 @@ export const updateResponseStatus = async (req, res) => {
     // Return the updated response
     await response.populate("donor", "name email phone");
     await response.populate("bloodRequest", "patientName bloodType hospital");
-
     res.status(200).json({
       message: "Response status updated successfully",
       response,
@@ -358,6 +366,55 @@ export const updateResponseStatus = async (req, res) => {
     console.error("Error updating response status:", error);
     res.status(500).json({
       message: "Server error while updating response status",
+      success: false,
+    });
+  }
+};
+
+// Delete Blood Request (only for request creators)
+export const deleteBloodRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const userId = req.user?._id || req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "User not authenticated",
+        success: false,
+      });
+    }
+
+    // Find the blood request
+    const bloodRequest = await BloodRequest.findById(requestId);
+
+    if (!bloodRequest) {
+      return res.status(404).json({
+        message: "Blood request not found",
+        success: false,
+      });
+    }
+
+    // Check if the current user is the creator of the blood request
+    if (bloodRequest.createdBy.toString() !== userId.toString()) {
+      return res.status(403).json({
+        message: "You are not authorized to delete this blood request",
+        success: false,
+      });
+    }
+
+    // Soft delete the request by setting isDeleted to true
+    bloodRequest.isDeleted = true;
+    bloodRequest.updatedAt = Date.now();
+    await bloodRequest.save();
+
+    res.status(200).json({
+      message: "Blood request deleted successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error deleting blood request:", error);
+    res.status(500).json({
+      message: "Server error while deleting blood request",
       success: false,
     });
   }
