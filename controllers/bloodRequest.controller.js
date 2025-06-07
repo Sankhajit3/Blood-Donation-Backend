@@ -115,6 +115,39 @@ export const getUserBloodRequests = async (req, res) => {
   }
 };
 
+// Get deleted blood requests by user
+export const getUserDeletedBloodRequests = async (req, res) => {
+  try {
+    const userId = req.user?._id || req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "User not authenticated",
+        success: false,
+      });
+    }
+
+    const deletedBloodRequests = await BloodRequest.find({
+      createdBy: userId,
+      isDeleted: true,
+    })
+      .sort({ updatedAt: -1 })
+      .populate("createdBy", "name email phone");
+
+    res.status(200).json({
+      message: "Deleted blood requests retrieved successfully",
+      bloodRequests: deletedBloodRequests,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error fetching deleted blood requests:", error);
+    res.status(500).json({
+      message: "Server error while fetching deleted blood requests",
+      success: false,
+    });
+  }
+};
+
 // Update Blood Request Status (Admin/Hospital)
 export const updateBloodRequestStatus = async (req, res) => {
   try {

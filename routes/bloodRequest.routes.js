@@ -3,6 +3,7 @@ import {
   createBloodRequest,
   getAllBloodRequests,
   getUserBloodRequests,
+  getUserDeletedBloodRequests,
   updateBloodRequestStatus,
   respondToBloodRequest,
   getBloodRequestResponses,
@@ -22,6 +23,13 @@ router.get("/", getAllBloodRequests);
 
 // Get blood requests by user (Authenticated users)
 router.get("/my-requests", isAuthenticated, getUserBloodRequests);
+
+// Get deleted blood requests by user (Authenticated users)
+router.get(
+  "/my-deleted-requests",
+  isAuthenticated,
+  getUserDeletedBloodRequests
+);
 
 // Get responses made by the current user (Authenticated users)
 router.get("/my-responses", isAuthenticated, getUserResponses);
