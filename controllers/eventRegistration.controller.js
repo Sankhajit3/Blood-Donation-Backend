@@ -88,6 +88,8 @@ export const checkEventRegistration = async (req, res) => {
 
     res.status(200).json({
       isRegistered: !!registration,
+      status: registration?.status || null,
+      registrationId: registration?._id || null,
       success: true,
     });
   } catch (error) {
@@ -212,15 +214,37 @@ export const updateRegistrationStatus = async (req, res) => {
       });
     }
 
-    // Update the registration status
-    registration.status = status;
-    await registration.save();
+    // Prevent changes to already approved registrations
+    if (registration.status === "Approved") {
+      return res.status(400).json({
+        message: "Cannot change status of an already approved registration",
+        success: false,
+      });
+    }
 
-    res.status(200).json({
-      message: `Registration status updated to ${status}`,
-      registration,
-      success: true,
-    });
+    // If rejecting a registration, delete it completely to vacate the status
+    if (status === "Rejected") {
+      await EventRegistration.findByIdAndDelete(registrationId);
+
+      // Decrement the registeredCount in the event
+      event.registeredCount = Math.max((event.registeredCount || 1) - 1, 0);
+      await event.save();
+
+      res.status(200).json({
+        message: "Registration rejected and removed",
+        success: true,
+      });
+    } else {
+      // Update the registration status for approved/pending
+      registration.status = status;
+      await registration.save();
+
+      res.status(200).json({
+        message: `Registration status updated to ${status}`,
+        registration,
+        success: true,
+      });
+    }
   } catch (error) {
     console.error("Update registration status error:", error);
     res.status(500).json({
