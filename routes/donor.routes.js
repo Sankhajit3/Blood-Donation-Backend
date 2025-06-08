@@ -6,7 +6,7 @@ import {
   getMyDonorForm,
 } from "../controllers/donor.controller.js";
 import { singleUpload } from "../middlewares/multer.js";
-import { isAuthenticated } from "../middlewares/auth.js"; // assuming JWT auth
+import isAuthenticated from "../middlewares/isAuthenticated.js";
 
 const router = express.Router();
 

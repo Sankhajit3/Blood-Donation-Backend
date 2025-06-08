@@ -1,11 +1,11 @@
-import Donor from "../models/Donor.js";
+import Donor from "../models/donor.model.js";
 import getDataUri from "../utils/dataUri.js";
 import cloudinary from "../utils/Cloudinary.js";
 
 // Register a donor
 export const registerDonor = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const {
       name,
@@ -19,11 +19,13 @@ export const registerDonor = async (req, res) => {
       weight,
       hemoglobinCount,
       isHealthy,
-      declarationAccepted
+      declarationAccepted,
     } = req.body;
 
     if (!declarationAccepted) {
-      return res.status(400).json({ message: "Declaration must be accepted", success: false });
+      return res
+        .status(400)
+        .json({ message: "Declaration must be accepted", success: false });
     }
 
     const file = req.files?.idProofImage?.[0];
@@ -49,12 +51,15 @@ export const registerDonor = async (req, res) => {
       weight,
       hemoglobinCount,
       isHealthy: isHealthy === "Yes" || isHealthy === true,
-      declarationAccepted: declarationAccepted === "true" || declarationAccepted === true,
+      declarationAccepted:
+        declarationAccepted === "true" || declarationAccepted === true,
     });
 
     await donor.save();
 
-    res.status(201).json({ message: "Donor registered successfully", donor, success: true });
+    res
+      .status(201)
+      .json({ message: "Donor registered successfully", donor, success: true });
   } catch (error) {
     console.error("Register donor error:", error);
     res.status(500).json({ message: "Server error", success: false });
@@ -74,10 +79,15 @@ export const getAllDonors = async (req, res) => {
 // Get donor by ID
 export const getDonorById = async (req, res) => {
   try {
-    const donor = await Donor.findById(req.params.id).populate("user", "name email");
+    const donor = await Donor.findById(req.params.id).populate(
+      "user",
+      "name email"
+    );
 
     if (!donor) {
-      return res.status(404).json({ message: "Donor not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Donor not found", success: false });
     }
 
     res.status(200).json({ donor, success: true });
@@ -89,10 +99,12 @@ export const getDonorById = async (req, res) => {
 // Get donor form submitted by logged-in user
 export const getMyDonorForm = async (req, res) => {
   try {
-    const donor = await Donor.findOne({ user: req.user.id });
+    const donor = await Donor.findOne({ user: req.user._id });
 
     if (!donor) {
-      return res.status(404).json({ message: "No donor form found for this user", success: false });
+      return res
+        .status(404)
+        .json({ message: "No donor form found for this user", success: false });
     }
 
     res.status(200).json({ donor, success: true });
