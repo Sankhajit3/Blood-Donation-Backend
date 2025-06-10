@@ -1,20 +1,24 @@
-import Post from "../models/Post.js";
+import Post from "../models/post.model.js";
 import getDataUri from "../utils/dataUri.js";
 import cloudinary from "../utils/Cloudinary.js";
 
 // CREATE a Post
 export const createPost = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { query } = req.body;
 
     if (!query) {
-      return res.status(400).json({ message: "Query is required.", success: false });
+      return res
+        .status(400)
+        .json({ message: "Query is required.", success: false });
     }
 
     const file = req.files?.image?.[0];
     if (!file) {
-      return res.status(400).json({ message: "Image is required.", success: false });
+      return res
+        .status(400)
+        .json({ message: "Image is required.", success: false });
     }
 
     const fileUri = getDataUri(file);
@@ -28,7 +32,13 @@ export const createPost = async (req, res) => {
 
     await newPost.save();
 
-    res.status(201).json({ message: "Post created successfully.", post: newPost, success: true });
+    res
+      .status(201)
+      .json({
+        message: "Post created successfully.",
+        post: newPost,
+        success: true,
+      });
   } catch (error) {
     console.error("Error creating post:", error);
     res.status(500).json({ message: "Server error", success: false });
@@ -49,9 +59,14 @@ export const getAllPosts = async (req, res) => {
 // GET Post by ID
 export const getPostById = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id).populate("user", "name email");
+    const post = await Post.findById(req.params.id).populate(
+      "user",
+      "name email"
+    );
     if (!post) {
-      return res.status(404).json({ message: "Post not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Post not found", success: false });
     }
     res.status(200).json({ post, success: true });
   } catch (error) {
@@ -67,7 +82,9 @@ export const updatePost = async (req, res) => {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ message: "Post not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Post not found", success: false });
     }
 
     // Optional image update
@@ -82,7 +99,9 @@ export const updatePost = async (req, res) => {
 
     await post.save();
 
-    res.status(200).json({ message: "Post updated successfully", post, success: true });
+    res
+      .status(200)
+      .json({ message: "Post updated successfully", post, success: true });
   } catch (error) {
     console.error("Error updating post:", error);
     res.status(500).json({ message: "Server error", success: false });
@@ -95,14 +114,18 @@ export const deletePost = async (req, res) => {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ message: "Post not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Post not found", success: false });
     }
 
     // Optionally delete image from cloudinary here if you store public_id
 
     await post.deleteOne();
 
-    res.status(200).json({ message: "Post deleted successfully", success: true });
+    res
+      .status(200)
+      .json({ message: "Post deleted successfully", success: true });
   } catch (error) {
     console.error("Error deleting post:", error);
     res.status(500).json({ message: "Server error", success: false });

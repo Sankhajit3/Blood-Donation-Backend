@@ -9,6 +9,7 @@ import bloodRequestRouter from "./routes/bloodRequest.routes.js";
 import eventRoutes from "./routes/event.routes.js";
 import donorRoutes from "./routes/donor.routes.js";
 import eventRegistrationRoutes from "./routes/eventRegistration.routes.js";
+import postRoutes from "./routes/post.routes.js";
 
 dotenv.config({});
 
@@ -35,6 +36,7 @@ app.use("/api/v1/events", eventRoutes);
 app.use("/api/v1/event-registrations", eventRegistrationRoutes);
 app.use("/api/v1/user/blood-requests", bloodRequestRouter);
 app.use("/api/v1/donor", donorRoutes);
+app.use("/api/v1/user/post", postRoutes);
 
 app.listen(PORT, () => {
   connectDB();
