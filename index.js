@@ -38,6 +38,18 @@ app.use("/api/v1/user/blood-requests", bloodRequestRouter);
 app.use("/api/v1/donor", donorRoutes);
 app.use("/api/v1/user/post", postRoutes);
 
+// Import and use the error handler middleware (must be after all routes)
+import errorHandler from "./middlewares/errorHandler.js";
+app.use(errorHandler);
+
+// Generic 404 handler for undefined routes
+app.use((req, res) => {
+  res.status(404).json({
+    message: `Route ${req.originalUrl} not found`,
+    success: false,
+  });
+});
+
 app.listen(PORT, () => {
   connectDB();
   console.log(`Server running at port ${PORT}`);
