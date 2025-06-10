@@ -6,7 +6,7 @@ import cloudinary from "../utils/Cloudinary.js";
 export const createPost = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { query } = req.body;
+    const { query, location } = req.body;
 
     if (!query) {
       return res
@@ -28,6 +28,7 @@ export const createPost = async (req, res) => {
       user: userId,
       image: upload.secure_url,
       query,
+      location: location || null,
     });
 
     await newPost.save();
@@ -147,7 +148,7 @@ export const getPostById = async (req, res) => {
 // EDIT a Post
 export const updatePost = async (req, res) => {
   try {
-    const { query } = req.body;
+    const { query, location } = req.body;
     const post = await Post.findById(req.params.id);
 
     if (!post) {
@@ -158,12 +159,10 @@ export const updatePost = async (req, res) => {
 
     // Check if the user is the owner of the post
     if (post.user.toString() !== req.user._id.toString()) {
-      return res
-        .status(403)
-        .json({
-          message: "You can only update your own posts",
-          success: false,
-        });
+      return res.status(403).json({
+        message: "You can only update your own posts",
+        success: false,
+      });
     }
 
     // Optional image update
@@ -173,8 +172,8 @@ export const updatePost = async (req, res) => {
       const upload = await cloudinary.uploader.upload(fileUri.content);
       post.image = upload.secure_url;
     }
-
     if (query) post.query = query;
+    if (location !== undefined) post.location = location;
 
     await post.save();
 
@@ -203,13 +202,11 @@ export const updatePost = async (req, res) => {
         (like) => like._id.toString() === req.user._id.toString()
       );
 
-    res
-      .status(200)
-      .json({
-        message: "Post updated successfully",
-        post: postObj,
-        success: true,
-      });
+    res.status(200).json({
+      message: "Post updated successfully",
+      post: postObj,
+      success: true,
+    });
   } catch (error) {
     console.error("Error updating post:", error);
     res.status(500).json({ message: "Server error", success: false });
@@ -229,12 +226,10 @@ export const deletePost = async (req, res) => {
 
     // Check if the user is the owner of the post
     if (post.user.toString() !== req.user._id.toString()) {
-      return res
-        .status(403)
-        .json({
-          message: "You can only delete your own posts",
-          success: false,
-        });
+      return res.status(403).json({
+        message: "You can only delete your own posts",
+        success: false,
+      });
     }
 
     // Optionally delete image from cloudinary here if you store public_id
