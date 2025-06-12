@@ -10,6 +10,7 @@ import eventRoutes from "./routes/event.routes.js";
 import donorRoutes from "./routes/donor.routes.js";
 import eventRegistrationRoutes from "./routes/eventRegistration.routes.js";
 import postRoutes from "./routes/post.routes.js";
+import bloodInventoryRoutes from "./routes/bloodInventory.routes.js";
 
 dotenv.config({});
 
@@ -37,6 +38,7 @@ app.use("/api/v1/event-registrations", eventRegistrationRoutes);
 app.use("/api/v1/user/blood-requests", bloodRequestRouter);
 app.use("/api/v1/donor", donorRoutes);
 app.use("/api/v1/user/post", postRoutes);
+app.use("/api/v1/blood-inventory", bloodInventoryRoutes);
 
 // Import and use the error handler middleware (must be after all routes)
 import errorHandler from "./middlewares/errorHandler.js";
