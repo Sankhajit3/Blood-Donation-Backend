@@ -48,7 +48,7 @@ const postSchema = new mongoose.Schema(
       required: true,
     },
     location: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,
       required: false,
     },
     likes: [
