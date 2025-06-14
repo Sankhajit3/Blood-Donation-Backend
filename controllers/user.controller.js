@@ -230,7 +230,6 @@ export const login = async (req, res) => {
         .status(400)
         .json({ message: "Invalid email or password.", success: false });
     }
-
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -239,11 +238,21 @@ export const login = async (req, res) => {
       }
     );
 
+    // Get the appropriate name based on role
+    let displayName = "";
+    if (user.role === "hospital") {
+      displayName = user.hospitalName;
+    } else if (user.role === "organization") {
+      displayName = user.organizationName;
+    } else {
+      displayName = user.name;
+    }
+
     return res
       .status(200)
       .cookie("token", token, { maxAge: 24 * 60 * 60 * 1000, httpOnly: true })
       .json({
-        message: `Welcome back ${user.name}`,
+        message: `Welcome back ${displayName}`,
         user,
         success: true,
       });
