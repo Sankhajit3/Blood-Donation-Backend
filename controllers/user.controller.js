@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import getDataUri from "../utils/dataUri.js";
 import cloudinary from "../utils/Cloudinary.js";
+import { checkAndUpdateEligibility } from "../utils/donationStatus.js";
 
 // // Secret Key for JWT (store it in .env file in production)
 // const JWT_SECRET = process.env.SECRET_KEY ;
@@ -295,6 +296,21 @@ export const getUserById = async (req, res) => {
       return res
         .status(404)
         .json({ message: "User not found.", success: false });
+
+    // Check and update donation eligibility if needed
+    if (user.role === "user") {
+      try {
+        await checkAndUpdateEligibility(req.params.id);
+        // Refetch user data after potential status update
+        const updatedUser = await User.findById(req.params.id).select(
+          "-password"
+        );
+        return res.status(200).json({ user: updatedUser, success: true });
+      } catch (eligibilityError) {
+        console.error("Error checking donation eligibility:", eligibilityError);
+        // Continue with original user data if eligibility check fails
+      }
+    }
 
     res.status(200).json({ user, success: true });
   } catch (error) {

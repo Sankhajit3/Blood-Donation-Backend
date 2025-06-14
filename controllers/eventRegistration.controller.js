@@ -1,11 +1,25 @@
 import Event from "../models/event.model.js";
 import EventRegistration from "../models/eventRegistration.model.js";
+import {
+  canUserDonate,
+  updateDonationStatus,
+} from "../utils/donationStatus.js";
 
 // Register for an event
 export const registerForEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
     const userId = req.user._id;
+
+    // Check if user can donate based on their donation status
+    const donationCheck = await canUserDonate(userId);
+    if (!donationCheck.canDonate) {
+      return res.status(400).json({
+        message: `Cannot register for event: ${donationCheck.reason}`,
+        success: false,
+        nextEligibleDate: donationCheck.nextEligibleDate || null,
+      });
+    }
 
     // Check if event exists
     const event = await Event.findById(eventId);
@@ -238,6 +252,19 @@ export const updateRegistrationStatus = async (req, res) => {
       // Update the registration status for approved/pending
       registration.status = status;
       await registration.save();
+
+      // If status is being changed to "Approved", update user's donation status
+      if (status === "Approved") {
+        try {
+          await updateDonationStatus(registration.user);
+          console.log(
+            `Updated donation status for user ${registration.user} after event approval`
+          );
+        } catch (donationError) {
+          console.error("Error updating donation status:", donationError);
+          // Continue with the response even if donation status update fails
+        }
+      }
 
       res.status(200).json({
         message: `Registration status updated to ${status}`,

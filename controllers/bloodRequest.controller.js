@@ -1,6 +1,10 @@
 import BloodRequest from "../models/bloodRequest.model.js";
 import User from "../models/user.model.js";
 import BloodRequestResponse from "../models/bloodRequestResponse.model.js";
+import {
+  canUserDonate,
+  updateDonationStatus,
+} from "../utils/donationStatus.js";
 
 // Create Blood Request
 export const createBloodRequest = async (req, res) => {
@@ -204,6 +208,16 @@ export const respondToBloodRequest = async (req, res) => {
       });
     }
 
+    // Check if user can donate based on their donation status
+    const donationCheck = await canUserDonate(donorId);
+    if (!donationCheck.canDonate) {
+      return res.status(400).json({
+        message: `Cannot respond to blood request: ${donationCheck.reason}`,
+        success: false,
+        nextEligibleDate: donationCheck.nextEligibleDate || null,
+      });
+    }
+
     // Validate required fields
     if (!contactNumber) {
       return res.status(400).json({
@@ -381,11 +395,22 @@ export const updateResponseStatus = async (req, res) => {
         message: "You are not authorized to update this response status",
         success: false,
       });
-    }
-
-    // Update the response status
+    } // Update the response status
     response.status = status;
     await response.save();
+
+    // If status is being changed to "Completed", update donor's donation status
+    if (status === "Completed") {
+      try {
+        await updateDonationStatus(response.donor);
+        console.log(
+          `Updated donation status for donor ${response.donor} after blood request completion`
+        );
+      } catch (donationError) {
+        console.error("Error updating donation status:", donationError);
+        // Continue with the response even if donation status update fails
+      }
+    }
 
     // Return the updated response
     await response.populate("donor", "name email phone");

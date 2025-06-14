@@ -125,6 +125,21 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+
+    // Donation Status Tracking
+    donationStatus: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
+    lastDonationDate: {
+      type: Date,
+      default: null,
+    },
+    nextEligibleDate: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
