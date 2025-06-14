@@ -9,20 +9,20 @@ import cloudinary from "../utils/Cloudinary.js";
 
 // Helper functions to parse measurements
 const parseWeight = (weight) => {
-  if (typeof weight === 'number') return weight;
-  if (typeof weight === 'string') {
+  if (typeof weight === "number") return weight;
+  if (typeof weight === "string") {
     // Extract numeric value, assuming it's in kg
-    const numericValue = parseFloat(weight.replace(/[^\d.-]/g, ''));
+    const numericValue = parseFloat(weight.replace(/[^\d.-]/g, ""));
     return !isNaN(numericValue) ? numericValue : null;
   }
   return null;
 };
 
 const parseHeight = (height) => {
-  if (typeof height === 'number') return height;
-  if (typeof height === 'string') {
+  if (typeof height === "number") return height;
+  if (typeof height === "string") {
     // Extract numeric value, assuming it's in cm
-    const numericValue = parseFloat(height.replace(/[^\d.-]/g, ''));
+    const numericValue = parseFloat(height.replace(/[^\d.-]/g, ""));
     return !isNaN(numericValue) ? numericValue : null;
   }
   return null;
@@ -74,7 +74,8 @@ export const register = async (req, res) => {
     }
     if (
       role === "organization" &&
-      (!organizationName || (!req.files?.organizationIdImage && !req.body.organizationIdImage))
+      (!organizationName ||
+        (!req.files?.organizationIdImage && !req.body.organizationIdImage))
     ) {
       return res.status(400).json({
         message: "organization name and ID image (file or URL) are required.",
@@ -83,7 +84,8 @@ export const register = async (req, res) => {
     }
     if (
       role === "hospital" &&
-      (!hospitalName || (!req.files?.hospitalIdImage && !req.body.hospitalIdImage))
+      (!hospitalName ||
+        (!req.files?.hospitalIdImage && !req.body.hospitalIdImage))
     ) {
       return res.status(400).json({
         message: "Hospital name and ID image (file or URL) are required.",
@@ -95,7 +97,8 @@ export const register = async (req, res) => {
       (!name || !addhar || (!req.files?.addharImage && !req.body.addharImage))
     ) {
       return res.status(400).json({
-        message: "User name, Aadhaar, and Aadhaar image (file or URL) are required.",
+        message:
+          "User name, Aadhaar, and Aadhaar image (file or URL) are required.",
         success: false,
       });
     }
@@ -344,10 +347,10 @@ export const updateUser = async (req, res) => {
     const authUser = req.user;
 
     // Check if user has permission to update (must be admin or the user themselves)
-    if (authUser.role !== 'admin' && authUser._id.toString() !== userId) {
+    if (authUser.role !== "admin" && authUser._id.toString() !== userId) {
       return res.status(403).json({
         message: "You don't have permission to update this user",
-        success: false
+        success: false,
       });
     }
 
@@ -385,44 +388,101 @@ export const updateUser = async (req, res) => {
     // Upload new images/documents if provided
     const fileUploads = {};
     if (req.files) {
-      for (const [key, file] of Object.entries(req.files)) {
-        const fileUri = getDataUri(file);
-        const uploadResult = await cloudinary.uploader.upload(fileUri.content);
-        fileUploads[key] = uploadResult.secure_url;
+      for (const [key, files] of Object.entries(req.files)) {
+        if (Array.isArray(files) && files.length > 0) {
+          const fileUri = getDataUri(files[0]);
+          const uploadResult = await cloudinary.uploader.upload(
+            fileUri.content
+          );
+          fileUploads[key] = uploadResult.secure_url;
+        }
       }
     }
 
-    // Update user data
-    if (name) user.name = name;
-    if (email) user.email = email;
-    if (phone) user.phone = phone;
-    if (addhar) user.addhar = addhar;
-    if (organizationId) user.organizationId = organizationId;
-    if (organizationName) user.organizationName = organizationName;
-    if (hospitalId) user.hospitalId = hospitalId;
-    if (hospitalName) user.hospitalName = hospitalName;
+    // Update user data - explicitly check for null/undefined to allow empty strings
+    if (name !== undefined && name !== null) user.name = name;
+    if (email !== undefined && email !== null) user.email = email;
+    if (phone !== undefined && phone !== null) user.phone = phone;
+    if (addhar !== undefined && addhar !== null) user.addhar = addhar;
+    if (organizationId !== undefined && organizationId !== null)
+      user.organizationId = organizationId;
+    if (organizationName !== undefined && organizationName !== null)
+      user.organizationName = organizationName;
+    if (hospitalId !== undefined && hospitalId !== null)
+      user.hospitalId = hospitalId;
+    if (hospitalName !== undefined && hospitalName !== null)
+      user.hospitalName = hospitalName;
 
     // Update personal information
-    if (dateOfBirth) user.dateOfBirth = dateOfBirth;
-    if (address) user.address = address;
-    if (emergencyContact) user.emergencyContact = emergencyContact;
-    if (bloodType) user.bloodType = bloodType;
-    if (gender) user.gender = gender;
+    if (dateOfBirth !== undefined && dateOfBirth !== null)
+      user.dateOfBirth = dateOfBirth;
+    if (address !== undefined && address !== null) user.address = address;
+    if (emergencyContact !== undefined && emergencyContact !== null)
+      user.emergencyContact = emergencyContact;
+    if (bloodType !== undefined && bloodType !== null)
+      user.bloodType = bloodType;
+    if (gender !== undefined && gender !== null) user.gender = gender;
 
     // Update medical details
-    if (weight) user.weight = parseWeight(weight);
-    if (height) user.height = parseHeight(height);
-    if (bloodPressure) user.bloodPressure = bloodPressure;
-    if (chronicConditions)
-      user.chronicConditions = Array.isArray(chronicConditions)
-        ? chronicConditions
-        : [chronicConditions];
-    if (allergies)
-      user.allergies = Array.isArray(allergies) ? allergies : [allergies];
-    if (medications)
-      user.medications = Array.isArray(medications)
-        ? medications
-        : [medications];
+    if (weight !== undefined && weight !== null)
+      user.weight = parseWeight(weight);
+    if (height !== undefined && height !== null)
+      user.height = parseHeight(height);
+    if (bloodPressure !== undefined && bloodPressure !== null)
+      user.bloodPressure = bloodPressure;
+
+    if (chronicConditions !== undefined && chronicConditions !== null) {
+      try {
+        // Handle case when chronicConditions comes as a JSON string
+        if (
+          typeof chronicConditions === "string" &&
+          chronicConditions.startsWith("[")
+        ) {
+          user.chronicConditions = JSON.parse(chronicConditions);
+        } else {
+          user.chronicConditions = Array.isArray(chronicConditions)
+            ? chronicConditions
+            : [chronicConditions];
+        }
+      } catch (err) {
+        console.error("Error parsing chronicConditions:", err);
+        user.chronicConditions = Array.isArray(chronicConditions)
+          ? chronicConditions
+          : [chronicConditions];
+      }
+    }
+
+    if (allergies !== undefined && allergies !== null) {
+      try {
+        // Handle case when allergies comes as a JSON string
+        if (typeof allergies === "string" && allergies.startsWith("[")) {
+          user.allergies = JSON.parse(allergies);
+        } else {
+          user.allergies = Array.isArray(allergies) ? allergies : [allergies];
+        }
+      } catch (err) {
+        console.error("Error parsing allergies:", err);
+        user.allergies = Array.isArray(allergies) ? allergies : [allergies];
+      }
+    }
+
+    if (medications !== undefined && medications !== null) {
+      try {
+        // Handle case when medications comes as a JSON string
+        if (typeof medications === "string" && medications.startsWith("[")) {
+          user.medications = JSON.parse(medications);
+        } else {
+          user.medications = Array.isArray(medications)
+            ? medications
+            : [medications];
+        }
+      } catch (err) {
+        console.error("Error parsing medications:", err);
+        user.medications = Array.isArray(medications)
+          ? medications
+          : [medications];
+      }
+    }
 
     // Update uploaded images
     if (fileUploads.addharImage) user.addharImage = fileUploads.addharImage;
@@ -430,6 +490,10 @@ export const updateUser = async (req, res) => {
       user.organizationIdImage = fileUploads.organizationIdImage;
     if (fileUploads.hospitalIdImage)
       user.hospitalIdImage = fileUploads.hospitalIdImage;
+    if (fileUploads.profilePhoto) {
+      if (!user.profile) user.profile = {};
+      user.profile.profilePhoto = fileUploads.profilePhoto;
+    }
 
     await user.save();
 
@@ -439,7 +503,7 @@ export const updateUser = async (req, res) => {
       success: true,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Update user error:", error);
     res.status(500).json({ message: "Server error", success: false });
   }
 };

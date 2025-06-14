@@ -130,14 +130,94 @@ export const getAllBloodInventories = async (req, res) => {
       "name hospitalName organizationName role"
     );
 
+    // Format the response specifically for dropdown usage
+    const formattedInventories = inventories.map((inventory) => {
+      // Get appropriate name based on role
+      let displayName = "";
+      if (inventory.userId) {
+        if (inventory.userId.role === "hospital") {
+          displayName = inventory.userId.hospitalName;
+        } else if (inventory.userId.role === "organization") {
+          displayName = inventory.userId.organizationName;
+        } else {
+          displayName = inventory.userId.name || "Unknown";
+        }
+      }
+
+      return {
+        ...inventory.toObject(),
+        displayName,
+      };
+    });
+
     return res.status(200).json({
-      inventories,
+      inventories: formattedInventories,
       success: true,
     });
   } catch (error) {
     console.error("Error fetching all blood inventories:", error);
     return res.status(500).json({
       message: "Server error while fetching blood inventories",
+      success: false,
+    });
+  }
+};
+
+// Get blood inventory by specific user ID (for hospital/org selection)
+export const getInventoryByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        message: "User ID is required",
+        success: false,
+      });
+    }
+
+    const inventory = await BloodInventory.findOne({ userId }).populate(
+      "userId",
+      "name hospitalName organizationName role"
+    );
+
+    if (!inventory) {
+      // Return default empty inventory with user details
+      const user = await User.findById(userId).select(
+        "name hospitalName organizationName role"
+      );
+
+      if (!user) {
+        return res.status(404).json({
+          message: "User not found",
+          success: false,
+        });
+      }
+
+      return res.status(200).json({
+        inventory: {
+          userId: user,
+          aPositive: 0,
+          aNegative: 0,
+          bPositive: 0,
+          bNegative: 0,
+          abPositive: 0,
+          abNegative: 0,
+          oPositive: 0,
+          oNegative: 0,
+          lastUpdated: new Date(),
+        },
+        success: true,
+      });
+    }
+
+    return res.status(200).json({
+      inventory,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error fetching blood inventory for specific user:", error);
+    return res.status(500).json({
+      message: "Server error while fetching blood inventory",
       success: false,
     });
   }
