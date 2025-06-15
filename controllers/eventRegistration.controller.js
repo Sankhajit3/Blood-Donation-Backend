@@ -137,9 +137,8 @@ export const getEventRegistrations = async (req, res) => {
         success: false,
       });
     }
-
     const registrations = await EventRegistration.find({ event: eventId })
-      .populate("user", "name email phone")
+      .populate("user", "name email phone hospitalName organizationName role")
       .sort({ registrationDate: -1 });
 
     res.status(200).json({
@@ -165,7 +164,8 @@ export const getUserEventRegistrations = async (req, res) => {
         path: "event",
         populate: {
           path: "createdBy",
-          select: "name email profile.profilePhoto",
+          select:
+            "name email profile.profilePhoto hospitalName organizationName role",
         },
       })
       .sort({ registrationDate: -1 });

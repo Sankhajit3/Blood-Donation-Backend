@@ -22,15 +22,26 @@ export const createPost = async (req, res) => {
     }
 
     const fileUri = getDataUri(file);
-    const upload = await cloudinary.uploader.upload(fileUri.content); // Parse location if it's provided as a string
+    const upload = await cloudinary.uploader.upload(fileUri.content);
+
+    // Handle location data - can be string or JSON object
     let locationData = location;
     if (typeof location === "string" && location.trim()) {
-      try {
-        locationData = JSON.parse(location);
-      } catch (e) {
-        // If parsing fails, keep the original string
-        console.warn("Failed to parse location as JSON, using as string:", e);
+      // Try to parse as JSON first (for backward compatibility)
+      if (location.startsWith("{") || location.startsWith("[")) {
+        try {
+          locationData = JSON.parse(location);
+        } catch (e) {
+          // If parsing fails, keep as string
+          console.warn(
+            "Failed to parse location as JSON, keeping as string:",
+            e.message
+          );
+          locationData = location;
+        }
       }
+      // If it doesn't look like JSON, treat as plain string
+      // This handles cases like "Bidhannagar, Kolkata, West Bengal, 700064"
     }
 
     const newPost = new Post({
@@ -71,18 +82,18 @@ export const getAllPosts = async (req, res) => {
   try {
     const posts = await Post.find()
       .sort({ createdAt: -1 }) // Sort by most recent first
-      .populate("user", "name email profile")
+      .populate("user", "name email profile hospitalName organizationName role")
       .populate({
         path: "comments.user",
-        select: "name email profile",
+        select: "name email profile hospitalName organizationName role",
       })
       .populate({
         path: "comments.replies.user",
-        select: "name email profile",
+        select: "name email profile hospitalName organizationName role",
       })
       .populate({
         path: "likes",
-        select: "name email profile",
+        select: "name email profile hospitalName organizationName role",
       });
 
     // Add isLikedByCurrentUser field for each post to help the frontend
@@ -120,18 +131,18 @@ export const getAllPosts = async (req, res) => {
 export const getPostById = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
-      .populate("user", "name email profile")
+      .populate("user", "name email profile hospitalName organizationName role")
       .populate({
         path: "comments.user",
-        select: "name email profile",
+        select: "name email profile hospitalName organizationName role",
       })
       .populate({
         path: "comments.replies.user",
-        select: "name email profile",
+        select: "name email profile hospitalName organizationName role",
       })
       .populate({
         path: "likes",
-        select: "name email profile",
+        select: "name email profile hospitalName organizationName role",
       });
 
     if (!post) {
@@ -224,22 +235,20 @@ export const updatePost = async (req, res) => {
       } else {
         throw saveError;
       }
-    }
-
-    // Get the updated post with populated fields for consistent response
+    } // Get the updated post with populated fields for consistent response
     const updatedPost = await Post.findById(post._id)
-      .populate("user", "name email")
+      .populate("user", "name email hospitalName organizationName role")
       .populate({
         path: "comments.user",
-        select: "name email",
+        select: "name email hospitalName organizationName role",
       })
       .populate({
         path: "comments.replies.user",
-        select: "name email",
+        select: "name email hospitalName organizationName role",
       })
       .populate({
         path: "likes",
-        select: "name email",
+        select: "name email hospitalName organizationName role",
       });
 
     // Add isLikedByCurrentUser field
@@ -387,7 +396,7 @@ export const commentOnPost = async (req, res) => {
         // Populate user info for the new comment
         const populatedPost = await Post.findById(post._id).populate({
           path: "comments.user",
-          select: "name email profile",
+          select: "name email profile hospitalName organizationName role",
         });
 
         const newComment =
@@ -467,7 +476,7 @@ export const replyToComment = async (req, res) => {
       // Populate user info for the new reply
       const populatedPost = await Post.findById(post._id).populate({
         path: "comments.replies.user",
-        select: "name email profile",
+        select: "name email profile hospitalName organizationName role",
       });
 
       const newReply =

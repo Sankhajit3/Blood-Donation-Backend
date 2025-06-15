@@ -104,7 +104,10 @@ export const getAllEvents = async (req, res) => {
   try {
     const events = await Event.find()
       .sort({ date: 1 })
-      .populate("createdBy", "name email profile.profilePhoto");
+      .populate(
+        "createdBy",
+        "name email profile.profilePhoto hospitalName organizationName role"
+      );
 
     res.status(200).json({
       message: "Events fetched successfully",
@@ -125,7 +128,10 @@ export const getMyEvents = async (req, res) => {
   try {
     const events = await Event.find({ createdBy: req.user._id })
       .sort({ date: 1 })
-      .populate("createdBy", "name email profile.profilePhoto");
+      .populate(
+        "createdBy",
+        "name email profile.profilePhoto hospitalName organizationName role"
+      );
 
     res.status(200).json({
       message: "Your events fetched successfully",
