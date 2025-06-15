@@ -13,26 +13,28 @@ export const createBloodRequest = async (req, res) => {
       patientName,
       bloodType,
       hospital,
+      hospitalName,
       location,
       urgency,
       unitsRequired,
+      unitsNeeded,
       contactNumber,
       reason,
+      requiredBy,
     } = req.body;
 
     // Validate required fields
     if (
       !patientName ||
       !bloodType ||
-      !hospital ||
       !location ||
       !urgency ||
-      !unitsRequired ||
+      !(unitsRequired || unitsNeeded) ||
       !contactNumber ||
       !reason
     ) {
       return res.status(400).json({
-        message: "All fields are required",
+        message: "All required fields must be provided",
         success: false,
       });
     } // Get user ID from either req.user._id or req.userId
@@ -43,19 +45,21 @@ export const createBloodRequest = async (req, res) => {
         message: "User not authenticated",
         success: false,
       });
-    }
-
-    // Create new blood request
+    } // Create new blood request
     const newBloodRequest = new BloodRequest({
       patientName,
       bloodType,
-      hospital,
+      hospital: hospital || hospitalName || "Not specified",
+      hospitalName: hospitalName || hospital || "Not specified",
       location,
       urgency,
-      unitsRequired,
+      unitsRequired: unitsRequired || unitsNeeded || 1,
+      unitsNeeded: unitsNeeded || unitsRequired || 1,
       contactNumber,
       reason,
+      requiredBy: requiredBy || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default to 7 days from now
       createdBy: userId,
+      requestedBy: userId,
     });
 
     await newBloodRequest.save();
@@ -79,11 +83,33 @@ export const getAllBloodRequests = async (req, res) => {
   try {
     const bloodRequests = await BloodRequest.find({ isDeleted: { $ne: true } })
       .sort({ createdAt: -1 })
-      .populate("createdBy", "name email phone");
+      .populate("createdBy", "name email phone organizationName hospitalName")
+      .populate(
+        "requestedBy",
+        "name email phone organizationName hospitalName"
+      );
+
+    // Transform data to match frontend expectations
+    const transformedRequests = bloodRequests.map((request) => ({
+      id: request._id.toString(),
+      name: request.patientName,
+      bloodType: request.bloodType,
+      hospital: request.hospitalName || request.hospital || "Not specified",
+      location: request.location,
+      urgency: request.urgency,
+      postedTime: request.createdAt,
+      units: request.unitsNeeded || request.unitsRequired || 0,
+      contactNumber: request.contactNumber,
+      reason: request.reason,
+      createdBy: request.createdBy?._id?.toString(),
+      status: request.status,
+      requiredBy: request.requiredBy,
+      isDeleted: request.isDeleted || false,
+    }));
 
     res.status(200).json({
       message: "Blood requests retrieved successfully",
-      bloodRequests,
+      bloodRequests: transformedRequests,
       success: true,
     });
   } catch (error) {
@@ -103,11 +129,33 @@ export const getUserBloodRequests = async (req, res) => {
       isDeleted: { $ne: true },
     })
       .sort({ createdAt: -1 })
-      .populate("createdBy", "name email phone");
+      .populate("createdBy", "name email phone organizationName hospitalName")
+      .populate(
+        "requestedBy",
+        "name email phone organizationName hospitalName"
+      );
+
+    // Transform data to match frontend expectations
+    const transformedRequests = bloodRequests.map((request) => ({
+      id: request._id.toString(),
+      name: request.patientName,
+      bloodType: request.bloodType,
+      hospital: request.hospitalName || request.hospital || "Not specified",
+      location: request.location,
+      urgency: request.urgency,
+      postedTime: request.createdAt,
+      units: request.unitsNeeded || request.unitsRequired || 0,
+      contactNumber: request.contactNumber,
+      reason: request.reason,
+      createdBy: request.createdBy?._id?.toString(),
+      status: request.status,
+      requiredBy: request.requiredBy,
+      isDeleted: request.isDeleted || false,
+    }));
 
     res.status(200).json({
       message: "User blood requests retrieved successfully",
-      bloodRequests,
+      bloodRequests: transformedRequests,
       success: true,
     });
   } catch (error) {
@@ -130,17 +178,38 @@ export const getUserDeletedBloodRequests = async (req, res) => {
         success: false,
       });
     }
-
     const deletedBloodRequests = await BloodRequest.find({
       createdBy: userId,
       isDeleted: true,
     })
       .sort({ updatedAt: -1 })
-      .populate("createdBy", "name email phone");
+      .populate("createdBy", "name email phone organizationName hospitalName")
+      .populate(
+        "requestedBy",
+        "name email phone organizationName hospitalName"
+      );
+
+    // Transform data to match frontend expectations
+    const transformedRequests = deletedBloodRequests.map((request) => ({
+      id: request._id.toString(),
+      name: request.patientName,
+      bloodType: request.bloodType,
+      hospital: request.hospitalName || request.hospital || "Not specified",
+      location: request.location,
+      urgency: request.urgency,
+      postedTime: request.createdAt,
+      units: request.unitsNeeded || request.unitsRequired || 0,
+      contactNumber: request.contactNumber,
+      reason: request.reason,
+      createdBy: request.createdBy?._id?.toString(),
+      status: request.status,
+      requiredBy: request.requiredBy,
+      isDeleted: request.isDeleted || false,
+    }));
 
     res.status(200).json({
       message: "Deleted blood requests retrieved successfully",
-      bloodRequests: deletedBloodRequests,
+      bloodRequests: transformedRequests,
       success: true,
     });
   } catch (error) {
@@ -157,6 +226,22 @@ export const updateBloodRequestStatus = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { status } = req.body;
+
+    // Validate requestId
+    if (!requestId || requestId === "undefined" || requestId === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing request ID",
+        success: false,
+      });
+    }
+
+    // Validate if requestId is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(requestId)) {
+      return res.status(400).json({
+        message: "Invalid request ID format",
+        success: false,
+      });
+    }
 
     if (!["Pending", "Approved", "Rejected", "Fulfilled"].includes(status)) {
       return res.status(400).json({
@@ -197,6 +282,22 @@ export const respondToBloodRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { message, contactNumber } = req.body;
+
+    // Validate requestId
+    if (!requestId || requestId === "undefined" || requestId === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing request ID",
+        success: false,
+      });
+    }
+
+    // Validate if requestId is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(requestId)) {
+      return res.status(400).json({
+        message: "Invalid request ID format",
+        success: false,
+      });
+    }
 
     // Get user ID from authenticated user
     const donorId = req.user?._id || req.userId;
@@ -284,6 +385,22 @@ export const getBloodRequestResponses = async (req, res) => {
   try {
     const { requestId } = req.params;
 
+    // Validate requestId
+    if (!requestId || requestId === "undefined" || requestId === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing request ID",
+        success: false,
+      });
+    }
+
+    // Validate if requestId is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(requestId)) {
+      return res.status(400).json({
+        message: "Invalid request ID format",
+        success: false,
+      });
+    }
+
     // Check if the blood request exists and is not deleted
     const bloodRequest = await BloodRequest.findById(requestId);
     if (!bloodRequest || bloodRequest.isDeleted) {
@@ -352,6 +469,22 @@ export const updateResponseStatus = async (req, res) => {
   try {
     const { responseId } = req.params;
     const { status } = req.body;
+
+    // Validate responseId
+    if (!responseId || responseId === "undefined" || responseId === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing response ID",
+        success: false,
+      });
+    }
+
+    // Validate if responseId is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(responseId)) {
+      return res.status(400).json({
+        message: "Invalid response ID format",
+        success: false,
+      });
+    }
 
     // Validate status
     if (!["Pending", "Accepted", "Declined", "Completed"].includes(status)) {
@@ -433,6 +566,23 @@ export const updateResponseStatus = async (req, res) => {
 export const deleteBloodRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
+
+    // Validate requestId
+    if (!requestId || requestId === "undefined" || requestId === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing request ID",
+        success: false,
+      });
+    }
+
+    // Validate if requestId is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(requestId)) {
+      return res.status(400).json({
+        message: "Invalid request ID format",
+        success: false,
+      });
+    }
+
     const userId = req.user?._id || req.userId;
 
     if (!userId) {

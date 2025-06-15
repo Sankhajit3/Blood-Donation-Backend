@@ -14,6 +14,10 @@ const bloodRequestSchema = new mongoose.Schema({
     type: String,
     required: [true, "Hospital name is required"],
   },
+  hospitalName: {
+    type: String,
+    required: [true, "Hospital name is required"],
+  },
   location: {
     type: String,
     required: [true, "Location is required"],
@@ -29,6 +33,11 @@ const bloodRequestSchema = new mongoose.Schema({
     required: [true, "Units required is needed"],
     min: [1, "At least 1 unit is required"],
   },
+  unitsNeeded: {
+    type: Number,
+    required: [true, "Units needed is required"],
+    min: [1, "At least 1 unit is required"],
+  },
   contactNumber: {
     type: String,
     required: [true, "Contact number is required"],
@@ -39,8 +48,15 @@ const bloodRequestSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Pending", "Approved", "Rejected", "Fulfilled"],
-    default: "Pending",
+    enum: [
+      "pending",
+      "approved",
+      "rejected",
+      "fulfilled",
+      "urgent",
+      "cancelled",
+    ],
+    default: "pending",
   },
   isDeleted: {
     type: Boolean,
@@ -50,6 +66,15 @@ const bloodRequestSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
+  },
+  requestedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  requiredBy: {
+    type: Date,
+    required: [true, "Required by date is needed"],
   },
   createdAt: {
     type: Date,

@@ -22,14 +22,21 @@ const isAuthenticated = async (req, res, next) => {
         message: "Invalid token",
         success: false,
       });
-    }
-
-    // Fetch full user object to get role and other details
+    } // Fetch full user object to get role and other details
     const user = await User.findById(decoded.userId).select("-password");
 
     if (!user) {
       return res.status(401).json({
         message: "User not found",
+        success: false,
+      });
+    }
+
+    // Check if user account is still active
+    if (!user.isActive) {
+      return res.status(403).json({
+        message:
+          "Your account has been blocked by admin. Please contact support.",
         success: false,
       });
     }

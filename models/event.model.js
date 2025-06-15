@@ -21,6 +21,14 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: [true, "Venue is required"],
     },
+    location: {
+      type: String,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected", "completed"],
+      default: "pending",
+    },
     image: {
       type: String,
       default: "",

@@ -216,12 +216,20 @@ export const login = async (req, res) => {
         .status(400)
         .json({ message: "Email and password are required.", success: false });
     }
-
     const user = await User.findOne({ email });
     if (!user) {
       return res
         .status(400)
         .json({ message: "Invalid email or password.", success: false });
+    }
+
+    // Check if user account is active
+    if (!user.isActive) {
+      return res.status(403).json({
+        message:
+          "Your account has been blocked by admin. Please contact support.",
+        success: false,
+      });
     }
 
     const isPasswordMatch = await bcrypt.compare(password, user.password);
@@ -300,20 +308,34 @@ export const getAllUsers = async (req, res) => {
 // Get User by ID
 export const getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select("-password");
+    const { id } = req.params;
+
+    // Validate id
+    if (!id || id === "undefined" || id === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing user ID",
+        success: false,
+      });
+    }
+
+    // Validate if id is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({
+        message: "Invalid user ID format",
+        success: false,
+      });
+    }
+
+    const user = await User.findById(id).select("-password");
     if (!user)
       return res
         .status(404)
-        .json({ message: "User not found.", success: false });
-
-    // Check and update donation eligibility if needed
+        .json({ message: "User not found.", success: false }); // Check and update donation eligibility if needed
     if (user.role === "user") {
       try {
-        await checkAndUpdateEligibility(req.params.id);
+        await checkAndUpdateEligibility(id);
         // Refetch user data after potential status update
-        const updatedUser = await User.findById(req.params.id).select(
-          "-password"
-        );
+        const updatedUser = await User.findById(id).select("-password");
         return res.status(200).json({ user: updatedUser, success: true });
       } catch (eligibilityError) {
         console.error("Error checking donation eligibility:", eligibilityError);
@@ -332,6 +354,23 @@ export const getUserById = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const userId = req.params.id;
+
+    // Validate userId
+    if (!userId || userId === "undefined" || userId === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing user ID",
+        success: false,
+      });
+    }
+
+    // Validate if userId is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(userId)) {
+      return res.status(400).json({
+        message: "Invalid user ID format",
+        success: false,
+      });
+    }
+
     const user = await User.findByIdAndDelete(userId);
 
     if (!user) {

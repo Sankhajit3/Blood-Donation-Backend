@@ -124,9 +124,7 @@ const userSchema = new mongoose.Schema(
     medications: {
       type: [String],
       default: [],
-    },
-
-    // Donation Status Tracking
+    }, // Donation Status Tracking
     donationStatus: {
       type: String,
       enum: ["active", "inactive"],
@@ -139,6 +137,12 @@ const userSchema = new mongoose.Schema(
     nextEligibleDate: {
       type: Date,
       default: null,
+    },
+
+    // Admin Control
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true }

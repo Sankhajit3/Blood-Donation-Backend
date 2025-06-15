@@ -130,7 +130,25 @@ export const getAllPosts = async (req, res) => {
 // GET Post by ID
 export const getPostById = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id)
+    const { id } = req.params;
+
+    // Validate id
+    if (!id || id === "undefined" || id === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing post ID",
+        success: false,
+      });
+    }
+
+    // Validate if id is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({
+        message: "Invalid post ID format",
+        success: false,
+      });
+    }
+
+    const post = await Post.findById(id)
       .populate("user", "name email profile hospitalName organizationName role")
       .populate({
         path: "comments.user",
@@ -181,8 +199,26 @@ export const getPostById = async (req, res) => {
 // EDIT a Post
 export const updatePost = async (req, res) => {
   try {
+    const { id } = req.params;
     const { query, location } = req.body;
-    const post = await Post.findById(req.params.id);
+
+    // Validate id
+    if (!id || id === "undefined" || id === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing post ID",
+        success: false,
+      });
+    }
+
+    // Validate if id is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({
+        message: "Invalid post ID format",
+        success: false,
+      });
+    }
+
+    const post = await Post.findById(id);
 
     if (!post) {
       return res
@@ -274,7 +310,25 @@ export const updatePost = async (req, res) => {
 // DELETE a Post
 export const deletePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const { id } = req.params;
+
+    // Validate id
+    if (!id || id === "undefined" || id === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing post ID",
+        success: false,
+      });
+    }
+
+    // Validate if id is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({
+        message: "Invalid post ID format",
+        success: false,
+      });
+    }
+
+    const post = await Post.findById(id);
 
     if (!post) {
       return res
@@ -306,7 +360,25 @@ export const deletePost = async (req, res) => {
 // Like a post
 export const likePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const { id } = req.params;
+
+    // Validate id
+    if (!id || id === "undefined" || id === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing post ID",
+        success: false,
+      });
+    }
+
+    // Validate if id is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({
+        message: "Invalid post ID format",
+        success: false,
+      });
+    }
+
+    const post = await Post.findById(id);
 
     if (!post) {
       return res
@@ -357,6 +429,7 @@ export const likePost = async (req, res) => {
 // Add a comment to a post
 export const commentOnPost = async (req, res) => {
   try {
+    const { id } = req.params;
     const { text } = req.body;
 
     if (!text || !text.trim()) {
@@ -365,7 +438,23 @@ export const commentOnPost = async (req, res) => {
         .json({ message: "Comment text is required", success: false });
     }
 
-    const post = await Post.findById(req.params.id);
+    // Validate id
+    if (!id || id === "undefined" || id === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing post ID",
+        success: false,
+      });
+    }
+
+    // Validate if id is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({
+        message: "Invalid post ID format",
+        success: false,
+      });
+    }
+
+    const post = await Post.findById(id);
 
     if (!post) {
       return res
@@ -507,7 +596,25 @@ export const replyToComment = async (req, res) => {
 // Share a post (increment shares count)
 export const sharePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const { id } = req.params;
+
+    // Validate id
+    if (!id || id === "undefined" || id === "null") {
+      return res.status(400).json({
+        message: "Invalid or missing post ID",
+        success: false,
+      });
+    }
+
+    // Validate if id is a valid ObjectId
+    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({
+        message: "Invalid post ID format",
+        success: false,
+      });
+    }
+
+    const post = await Post.findById(id);
 
     if (!post) {
       return res
