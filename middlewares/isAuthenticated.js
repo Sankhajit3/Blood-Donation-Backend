@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
 
-const isAuthenticated = (req, res, next) => {
+const isAuthenticated = async (req, res, next) => {
   try {
     // Get token from cookies or Authorization header
     let token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
@@ -21,8 +22,20 @@ const isAuthenticated = (req, res, next) => {
         message: "Invalid token",
         success: false,
       });
-    } // Attach user to request
-    req.user = { _id: decoded.userId };
+    }
+
+    // Fetch full user object to get role and other details
+    const user = await User.findById(decoded.userId).select("-password");
+
+    if (!user) {
+      return res.status(401).json({
+        message: "User not found",
+        success: false,
+      });
+    }
+
+    // Attach full user object to request
+    req.user = user;
 
     next();
   } catch (error) {

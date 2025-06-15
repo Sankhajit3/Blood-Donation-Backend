@@ -12,6 +12,8 @@ import {
 import {
   getHospitalHistory,
   getOrganizationHistory,
+  getHospitalUserInteractions,
+  getOrganizationUserInteractions,
 } from "../controllers/userHistory.controller.js";
 import { singleUpload } from "../middlewares/multer.js";
 
@@ -26,5 +28,15 @@ router.put("/users/:id", isAuthenticated, singleUpload, updateUser);
 router.delete("/delete/:id", isAuthenticated, deleteUser);
 router.get("/hospital-history", isAuthenticated, getHospitalHistory);
 router.get("/organization-history", isAuthenticated, getOrganizationHistory);
+router.get(
+  "/hospital-user-interactions",
+  isAuthenticated,
+  getHospitalUserInteractions
+);
+router.get(
+  "/organization-user-interactions",
+  isAuthenticated,
+  getOrganizationUserInteractions
+);
 
 export default router;
