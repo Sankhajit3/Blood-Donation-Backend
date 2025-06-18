@@ -12,6 +12,7 @@ import {
   deleteBloodRequestByAdmin,
   getAllPostsForAdmin,
   deletePostByAdmin,
+  getBloodInventoryStats,
 } from "../controllers/admin.controller.js";
 import isAuthenticated from "../middlewares/isAuthenticated.js";
 
@@ -31,6 +32,12 @@ const isAdmin = (req, res, next) => {
 
 // Dashboard
 router.get("/dashboard/stats", isAuthenticated, isAdmin, getDashboardStats);
+router.get(
+  "/blood-inventory/stats",
+  isAuthenticated,
+  isAdmin,
+  getBloodInventoryStats
+);
 
 // Test basic connectivity (no admin required)
 router.get("/test-basic", isAuthenticated, (req, res) => {

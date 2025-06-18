@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import Event from "../models/event.model.js";
 import BloodRequest from "../models/bloodRequest.model.js";
+import BloodRequestResponse from "../models/bloodRequestResponse.model.js";
 import Post from "../models/post.model.js";
 import BloodInventory from "../models/bloodInventory.model.js";
 import EventRegistration from "../models/eventRegistration.model.js";
@@ -202,11 +203,11 @@ export const getAllEventsForAdmin = async (req, res) => {
     if (status && status !== "all") {
       query.status = status;
     }
-
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
+        { venue: { $regex: search, $options: "i" } },
         { location: { $regex: search, $options: "i" } },
       ];
     }
@@ -354,7 +355,27 @@ export const getAllBloodRequestsForAdmin = async (req, res) => {
       .populate("requestedBy", "name organizationName hospitalName email role")
       .sort({ createdAt: -1 })
       .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit); // Get all blood request IDs to check for completed responses
+    const requestIds = bloodRequests.map((request) => request._id);
+
+    // Find all completed responses for these requests
+    const completedResponses = await BloodRequestResponse.find({
+      bloodRequest: { $in: requestIds },
+      status: "Completed",
+    }).select("bloodRequest");
+
+    // Create a Set of request IDs that have completed responses
+    const requestsWithCompletedResponses = new Set(
+      completedResponses.map((response) => response.bloodRequest.toString())
+    );
+
+    // Add hasCompletedResponse field to each blood request
+    const bloodRequestsWithCompletionStatus = bloodRequests.map((request) => ({
+      ...request.toObject(),
+      hasCompletedResponse: requestsWithCompletedResponses.has(
+        request._id.toString()
+      ),
+    }));
 
     const total = await BloodRequest.countDocuments(query);
 
@@ -362,7 +383,7 @@ export const getAllBloodRequestsForAdmin = async (req, res) => {
       message: "Blood requests retrieved successfully",
       success: true,
       data: {
-        bloodRequests,
+        bloodRequests: bloodRequestsWithCompletionStatus,
         total,
         page: parseInt(page),
         pages: Math.ceil(total / limit),
@@ -539,6 +560,97 @@ export const deletePostByAdmin = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in deletePostByAdmin:", error);
+    res.status(500).json({
+      message: "Internal server error",
+      success: false,
+    });
+  }
+};
+
+// Get Blood Inventory Statistics
+export const getBloodInventoryStats = async (req, res) => {
+  try {
+    const inventories = await BloodInventory.find().populate(
+      "userId",
+      "name hospitalName organizationName role"
+    );
+
+    // Calculate total blood units by type
+    const totalStats = {
+      aPositive: 0,
+      aNegative: 0,
+      bPositive: 0,
+      bNegative: 0,
+      abPositive: 0,
+      abNegative: 0,
+      oPositive: 0,
+      oNegative: 0,
+      totalUnits: 0,
+      totalHospitals: inventories.length,
+    };
+
+    // Sum up all blood types from all inventories
+    inventories.forEach((inventory) => {
+      totalStats.aPositive += inventory.aPositive || 0;
+      totalStats.aNegative += inventory.aNegative || 0;
+      totalStats.bPositive += inventory.bPositive || 0;
+      totalStats.bNegative += inventory.bNegative || 0;
+      totalStats.abPositive += inventory.abPositive || 0;
+      totalStats.abNegative += inventory.abNegative || 0;
+      totalStats.oPositive += inventory.oPositive || 0;
+      totalStats.oNegative += inventory.oNegative || 0;
+    });
+
+    // Calculate total units
+    totalStats.totalUnits =
+      totalStats.aPositive +
+      totalStats.aNegative +
+      totalStats.bPositive +
+      totalStats.bNegative +
+      totalStats.abPositive +
+      totalStats.abNegative +
+      totalStats.oPositive +
+      totalStats.oNegative;
+
+    // Format data for individual hospital inventories
+    const hospitalInventories = inventories.map((inventory) => {
+      let displayName = "";
+      if (inventory.userId) {
+        if (inventory.userId.role === "hospital") {
+          displayName = inventory.userId.hospitalName;
+        } else if (inventory.userId.role === "organization") {
+          displayName = inventory.userId.organizationName;
+        } else {
+          displayName = inventory.userId.name || "Unknown";
+        }
+      }
+
+      return {
+        id: inventory._id,
+        displayName,
+        role: inventory.userId?.role || "unknown",
+        aPositive: inventory.aPositive || 0,
+        aNegative: inventory.aNegative || 0,
+        bPositive: inventory.bPositive || 0,
+        bNegative: inventory.bNegative || 0,
+        abPositive: inventory.abPositive || 0,
+        abNegative: inventory.abNegative || 0,
+        oPositive: inventory.oPositive || 0,
+        oNegative: inventory.oNegative || 0,
+        lastUpdated: inventory.lastUpdated,
+      };
+    });
+
+    res.status(200).json({
+      message: "Blood inventory statistics retrieved successfully",
+      success: true,
+      data: {
+        totalStats,
+        hospitalInventories,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getBloodInventoryStats:", error);
     res.status(500).json({
       message: "Internal server error",
       success: false,

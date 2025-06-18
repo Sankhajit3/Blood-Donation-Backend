@@ -89,6 +89,20 @@ export const getAllBloodRequests = async (req, res) => {
         "name email phone organizationName hospitalName"
       );
 
+    // Get all blood request IDs to check for completed responses
+    const requestIds = bloodRequests.map((request) => request._id);
+
+    // Find all completed responses for these requests
+    const completedResponses = await BloodRequestResponse.find({
+      bloodRequest: { $in: requestIds },
+      status: "Completed",
+    }).select("bloodRequest");
+
+    // Create a Set of request IDs that have completed responses
+    const requestsWithCompletedResponses = new Set(
+      completedResponses.map((response) => response.bloodRequest.toString())
+    );
+
     // Transform data to match frontend expectations
     const transformedRequests = bloodRequests.map((request) => ({
       id: request._id.toString(),
@@ -105,6 +119,9 @@ export const getAllBloodRequests = async (req, res) => {
       status: request.status,
       requiredBy: request.requiredBy,
       isDeleted: request.isDeleted || false,
+      hasCompletedResponse: requestsWithCompletedResponses.has(
+        request._id.toString()
+      ),
     }));
 
     res.status(200).json({
