@@ -124,6 +124,14 @@ export const getAllBloodRequests = async (req, res) => {
 // Get Blood Requests by User
 export const getUserBloodRequests = async (req, res) => {
   try {
+    // Only allow non-user roles to access this endpoint
+    if (req.user.role === "user") {
+      return res.status(403).json({
+        message: "Access denied: Users cannot create blood requests",
+        success: false,
+      });
+    }
+
     const bloodRequests = await BloodRequest.find({
       createdBy: req.user._id,
       isDeleted: { $ne: true },
@@ -139,6 +147,7 @@ export const getUserBloodRequests = async (req, res) => {
     const transformedRequests = bloodRequests.map((request) => ({
       id: request._id.toString(),
       name: request.patientName,
+      patientName: request.patientName, // Add this for consistency
       bloodType: request.bloodType,
       hospital: request.hospitalName || request.hospital || "Not specified",
       location: request.location,
