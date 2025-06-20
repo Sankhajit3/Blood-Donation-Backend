@@ -254,27 +254,14 @@ export const login = async (req, res) => {
       displayName = user.organizationName;
     } else {
       displayName = user.name;
-    } // Configure cookie options for cross-domain usage
-    const cookieOptions = {
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Only use HTTPS in production
-      sameSite: "none", // Required for cross-domain cookies
-      path: "/",
-      domain:
-        process.env.NODE_ENV === "production" ? ".onrender.com" : undefined, // Limit to the render domain
-    };
-
-    // Also include the token in the response body for localStorage
-    user.token = token;
+    }
 
     return res
       .status(200)
-      .cookie("token", token, cookieOptions)
+      .cookie("token", token, { maxAge: 24 * 60 * 60 * 1000, httpOnly: true })
       .json({
         message: `Welcome back ${displayName}`,
         user,
-        token, // Include token in response for cross-domain support
         success: true,
       });
   } catch (error) {
@@ -286,18 +273,7 @@ export const login = async (req, res) => {
 // Logout User
 export const logout = async (req, res) => {
   try {
-    // Use the same cookie options as in login for consistency
-    const cookieOptions = {
-      maxAge: 0,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-      path: "/",
-      domain:
-        process.env.NODE_ENV === "production" ? ".onrender.com" : undefined,
-    };
-
-    return res.status(200).cookie("token", "", cookieOptions).json({
+    return res.status(200).cookie("token", "", { maxAge: 0 }).json({
       message: "Logged out successfully.",
       success: true,
     });
