@@ -103,26 +103,28 @@ export const getAllBloodRequests = async (req, res) => {
       completedResponses.map((response) => response.bloodRequest.toString())
     );
 
-    // Transform data to match frontend expectations
-    const transformedRequests = bloodRequests.map((request) => ({
-      id: request._id.toString(),
-      name: request.patientName,
-      bloodType: request.bloodType,
-      hospital: request.hospitalName || request.hospital || "Not specified",
-      location: request.location,
-      urgency: request.urgency,
-      postedTime: request.createdAt,
-      units: request.unitsNeeded || request.unitsRequired || 0,
-      contactNumber: request.contactNumber,
-      reason: request.reason,
-      createdBy: request.createdBy?._id?.toString(),
-      status: request.status,
-      requiredBy: request.requiredBy,
-      isDeleted: request.isDeleted || false,
-      hasCompletedResponse: requestsWithCompletedResponses.has(
-        request._id.toString()
-      ),
-    }));
+    // Transform data to match frontend expectations, ensuring deleted requests are excluded
+    const transformedRequests = bloodRequests
+      .filter((request) => !request.isDeleted)
+      .map((request) => ({
+        id: request._id.toString(),
+        name: request.patientName,
+        bloodType: request.bloodType,
+        hospital: request.hospitalName || request.hospital || "Not specified",
+        location: request.location,
+        urgency: request.urgency,
+        postedTime: request.createdAt,
+        units: request.unitsNeeded || request.unitsRequired || 0,
+        contactNumber: request.contactNumber,
+        reason: request.reason,
+        createdBy: request.createdBy?._id?.toString(),
+        status: request.status,
+        requiredBy: request.requiredBy,
+        isDeleted: request.isDeleted || false,
+        hasCompletedResponse: requestsWithCompletedResponses.has(
+          request._id.toString()
+        ),
+      }));
 
     res.status(200).json({
       message: "Blood requests retrieved successfully",
@@ -276,22 +278,27 @@ export const updateBloodRequestStatus = async (req, res) => {
       });
     }
 
-    const updatedRequest = await BloodRequest.findByIdAndUpdate(
-      requestId,
-      { status, updatedAt: Date.now() },
-      { new: true }
-    );
+    // Check if request exists and is not deleted
+    const bloodRequest = await BloodRequest.findOne({
+      _id: requestId,
+      isDeleted: { $ne: true },
+    });
 
-    if (!updatedRequest) {
+    if (!bloodRequest) {
       return res.status(404).json({
-        message: "Blood request not found",
+        message: "Blood request not found or has been deleted",
         success: false,
       });
     }
 
+    // Update the request
+    bloodRequest.status = status;
+    bloodRequest.updatedAt = Date.now();
+    await bloodRequest.save();
+
     res.status(200).json({
       message: "Blood request status updated successfully",
-      bloodRequest: updatedRequest,
+      bloodRequest,
       success: true,
     });
   } catch (error) {
@@ -428,8 +435,12 @@ export const getBloodRequestResponses = async (req, res) => {
     }
 
     // Check if the blood request exists and is not deleted
-    const bloodRequest = await BloodRequest.findById(requestId);
-    if (!bloodRequest || bloodRequest.isDeleted) {
+    const bloodRequest = await BloodRequest.findOne({
+      _id: requestId,
+      isDeleted: { $ne: true },
+    });
+
+    if (!bloodRequest) {
       return res.status(404).json({
         message: "Blood request not found or has been deleted",
         success: false,
@@ -468,7 +479,17 @@ export const getUserResponses = async (req, res) => {
       });
     }
 
-    const responses = await BloodRequestResponse.find({ donor: userId })
+    // First find all non-deleted blood requests
+    const validBloodRequests = await BloodRequest.find({
+      isDeleted: { $ne: true },
+    }).select("_id");
+    const validRequestIds = validBloodRequests.map((req) => req._id);
+
+    // Then find responses that match these valid request IDs
+    const responses = await BloodRequestResponse.find({
+      donor: userId,
+      bloodRequest: { $in: validRequestIds },
+    })
       .populate({
         path: "bloodRequest",
         select:
