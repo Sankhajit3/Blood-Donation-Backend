@@ -24,8 +24,8 @@ app.use(cookieParser());
 
 const corsOptions = {
   origin: [
+    "https://blood-donation-frontend-seven.vercel.app",
     "http://localhost:5173",
-    "https://blood-donation-frontend-seven.vercel.app/",
   ],
   credentials: true,
 };
