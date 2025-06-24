@@ -256,9 +256,17 @@ export const login = async (req, res) => {
       displayName = user.name;
     }
 
+    // Set cookie with proper options for production
+    const cookieOptions = {
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Use secure in production
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Required for cross-origin
+    };
+
     return res
       .status(200)
-      .cookie("token", token, { maxAge: 24 * 60 * 60 * 1000, httpOnly: true })
+      .cookie("token", token, cookieOptions)
       .json({
         message: `Welcome back ${displayName}`,
         user,
@@ -273,7 +281,15 @@ export const login = async (req, res) => {
 // Logout User
 export const logout = async (req, res) => {
   try {
-    return res.status(200).cookie("token", "", { maxAge: 0 }).json({
+    // Clear cookie with proper options for production
+    const cookieOptions = {
+      maxAge: 0,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    };
+
+    return res.status(200).cookie("token", "", cookieOptions).json({
       message: "Logged out successfully.",
       success: true,
     });
